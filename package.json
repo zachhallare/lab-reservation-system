@@ -1,0 +1,29 @@
+{
+  "name": "ccapdev-s18-s19",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keifersy/CCAPDEV-S18-S19.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/keifersy/CCAPDEV-S18-S19/issues"
+  },
+  "homepage": "https://github.com/keifersy/CCAPDEV-S18-S19#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-handlebars": "^8.0.3",
+    "express-session": "^1.19.0",
+    "mongoose": "^9.3.0"
+  }
+}

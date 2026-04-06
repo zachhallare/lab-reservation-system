@@ -1,0 +1,424 @@
+<title>Dashboard | Labubu</title>
+<meta name="description" content="Labubu - DLSU Computer Lab Reservation System">
+
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+    <div class="nav-container">
+        <a href="/dashboard" class="nav-logo">
+            <span class="logo-icon"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                    style="height:1.5em;vertical-align:middle;"></span>
+            <span class="logo-text">Labubu</span>
+        </a>
+        <div class="nav-links" id="navLinks">
+            <a href="/dashboard" class="nav-link active" data-page="dashboard">Dashboard</a>
+            <a href="/reservations" class="nav-link" data-page="reservations">My Reservations</a>
+            <a href="/technician" class="nav-link" data-page="technician" id="navTechnician" style="display: none;">Technician</a>
+        </div>
+        <div class="nav-user" id="navUser">
+            <div class="user-dropdown">
+                <button class="user-btn" onclick="toggleUserMenu()">
+                    <div class="user-avatar" id="navAvatar">U</div>
+                    <span class="user-name" id="navUserName">User</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="/profile"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                            style="height:1em;vertical-align:middle;"> Profile</a>
+                    <a href="#" onclick="logout()"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                            style="height:1em;vertical-align:middle;"> Logout</a>
+                </div>
+            </div>
+        </div>
+        <button class="nav-toggle" onclick="toggleMobileNav()"><img src="/images/DLSU_Logo.png" alt="Menu"
+                style="height:1em;vertical-align:middle;"></button>
+    </div>
+</nav>
+
+<!-- Dashboard with Sidebar Layout -->
+<div class="dashboard-layout">
+    <!-- Sticky Sidebar Filter -->
+    <aside class="filter-sidebar glass-card" id="filterSidebar">
+        <h3><img src="/images/DLSU_Logo.png" alt="DLSU Logo" style="height:1em;vertical-align:middle;"> Find
+            Available Slots</h3>
+        <div class="filter-form">
+            <div class="filter-group">
+                <label for="filterSearch">Search Lab</label>
+                <input type="text" id="filterSearch" placeholder="e.g. G302, Mac lab">
+            </div>
+            <div class="filter-group">
+                <label for="filterDate">Date</label>
+                <input type="date" id="filterDate">
+            </div>
+            <div class="filter-group">
+                <label for="filterTime">Time Slot</label>
+                <select id="filterTime">
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filterCapacity">Min Seat Capacity</label>
+                <input type="number" id="filterCapacity" min="1" placeholder="e.g. 30">
+            </div>
+            <div class="filter-group">
+                <label for="filterAvailability">Availability</label>
+                <select id="filterAvailability">
+                    <option value="all">Any Status</option>
+                    <option value="available">Available Now</option>
+                    <option value="fully_booked">Fully Booked</option>
+                </select>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="applyFilters()">Search</button>
+            <button class="btn btn-secondary btn-full" onclick="clearFilters()">Clear</button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <!-- Dashboard Header with Stats -->
+        <section class="page dashboard-page" id="dashboardPage" style="display: block; padding-top: 20px;">
+            <div class="page-container">
+                <div class="dashboard-header">
+                    <div class="welcome-section">
+                        <h1>Welcome back, <span id="dashboardUserName">User</span>!</h1>
+                        <p class="subtitle">Reserve your computer lab slot for today or the upcoming week.</p>
+                    </div>
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                                    style="height:1.5em;vertical-align:middle;"></div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="activeReservations">0</span>
+                                <span class="stat-label">Active Reservations</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                                    style="height:1.5em;vertical-align:middle;"></div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="availableSlots">0</span>
+                                <span class="stat-label">Available Now</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="labs-section">
+                    <h2>Computer Labs</h2>
+                    <div class="labs-grid" id="labsGrid"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Lab View Section (shown when a lab is selected) -->
+        <section class="page lab-view-page" id="labViewPage" style="display: none;">
+            <div class="page-container">
+                <div class="lab-header">
+                    <button class="btn btn-back" onclick="showDashboard()">← Back to Labs</button>
+                    <div class="lab-info">
+                        <h1 id="labViewTitle">Lab Name</h1>
+                        <p id="labViewDescription">Lab description</p>
+                    </div>
+                </div>
+                <div class="date-selector glass-card">
+                    <h3><img src="/images/DLSU_Logo.png" alt="DLSU Logo" style="height:1em;vertical-align:middle;">
+                        Select Date</h3>
+                    <div class="date-tabs" id="dateTabs"></div>
+                </div>
+                <div class="time-selector glass-card">
+                    <h3><img src="/images/DLSU_Logo.png" alt="DLSU Logo" style="height:1em;vertical-align:middle;">
+                        Select Time Slot</h3>
+                    <div class="time-slots" id="timeSlots"></div>
+                </div>
+                <div class="seat-legend">
+                    <div class="legend-item">
+                        <div class="legend-color available"></div><span>Available</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color occupied"></div><span>Occupied</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color selected"></div><span>Selected</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color blocked"></div><span>Blocked</span>
+                    </div>
+                </div>
+                <div class="seat-map-container glass-card">
+                    <h3><img src="/images/DLSU_Logo.png" alt="DLSU Logo" style="height:1em;vertical-align:middle;">
+                        Seat Map</h3>
+                    <div class="seat-map" id="seatMap"></div>
+                </div>
+                <div class="reservation-actions glass-card" id="reservationActions" style="display: none;">
+                    <h3><img src="/images/DLSU_Logo.png" alt="DLSU Logo" style="height:1em;vertical-align:middle;">
+                        Reserve</h3>
+                    <div class="selected-info">
+                        <p><strong>Seat:</strong> <span id="selectedSeatInfo">-</span></p>
+                        <p><strong>Date:</strong> <span id="selectedDateInfo">-</span></p>
+                        <p><strong>Time:</strong> <span id="selectedTimeInfo">-</span></p>
+                    </div>
+                    <label class="checkbox-wrapper">
+                        <input type="checkbox" id="anonymousReservation">
+                        <span class="checkmark"></span>Anonymous
+                    </label>
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" onclick="confirmReservation()">Confirm</button>
+                        <button class="btn btn-secondary" onclick="cancelSelection()">Cancel</button>
+                    </div>
+                </div>
+                <div class="technician-actions glass-card" id="technicianActions" style="display: none;">
+                    <h3><img src="/images/DLSU_Logo.png" alt="DLSU Logo" style="height:1em;vertical-align:middle;">
+                        Technician</h3>
+                    <div class="tech-buttons">
+                        <button class="btn btn-warning" onclick="blockSelectedSlot()">Block</button>
+                        <button class="btn btn-info" onclick="reserveForWalkIn()">Walk-in</button>
+                        <button class="btn btn-danger" onclick="deleteReservation()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View Profile Section (shown when clicking a user from seat map) -->
+        <section class="page profile-page" id="viewProfilePage" style="display: none;">
+            <div class="page-container">
+                <button class="btn btn-back" onclick="goBackFromViewProfile()" style="margin-bottom: 1rem;">←
+                    Back</button>
+                <div class="profile-header">
+                    <div class="profile-cover"></div>
+                    <div class="profile-info">
+                        <div class="profile-avatar" id="viewProfileAvatar">U</div>
+                        <div class="profile-details">
+                            <h1 id="viewProfileName">User</h1>
+                            <span class="profile-role" id="viewProfileRole">Student</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-description glass-card">
+                    <h3>About</h3>
+                    <p id="viewProfileDescription">No description.</p>
+                </div>
+                <div class="profile-reservations glass-card">
+                    <h3>Non-Anonymous Reservations</h3>
+                    <div id="viewProfileReservationsList"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Footer -->
+<footer class="footer" id="footer">
+    <div class="footer-content">
+        <div class="footer-brand"><span class="logo-icon"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                    style="height:1.5em;vertical-align:middle;"></span><span>Labubu</span></div>
+        <p class="footer-credits">Made By: Ralph Del Rosario | Zach Hallare | Keifer Sy | Farrell Tadina </p>
+        <p class="footer-copyright"> 2026 De La Salle University</p>
+    </div>
+</footer>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" style="display: none;">
+    <div class="modal glass-card">
+        <h2 id="modalTitle">Confirm</h2>
+        <p id="modalMessage">Are you sure?</p>
+        <div class="modal-actions">
+            <button class="btn btn-primary" id="modalConfirm">Confirm</button>
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript Modules -->
+<script src="/js/data.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/utils.js"></script>
+<script src="/js/navigation.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/dashboard.js"></script>
+<script src="/js/lab.js"></script>
+<script src="/js/profile.js"></script>
+<script>
+    // Check auth and initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Check if logged in via server session
+        try {
+            const res = await fetch('/api/session');
+            const data = await res.json();
+            if (!data.loggedIn) {
+                window.location.href = '/login';
+                return;
+            }
+            state.currentUser = data.user;
+        } catch (e) {
+            window.location.href = '/login';
+            return;
+        }
+
+        await initializeData();
+
+        // Update UI
+        updateNavUser();
+        renderDashboard();
+        setDefaultFilterDate();
+        setupEventListeners();
+    });
+
+    function setupEventListeners() {
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('dropdownMenu');
+            const userBtn = document.querySelector('.user-btn');
+            if (dropdown && !dropdown.contains(e.target) && !userBtn?.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    }
+
+    function setDefaultFilterDate() {
+        const filterDate = document.getElementById('filterDate');
+        if (filterDate) {
+            filterDate.value = new Date().toISOString().split('T')[0];
+            filterDate.min = new Date().toISOString().split('T')[0];
+        }
+    }
+
+    // Override navigateTo for lab view
+    function showLabView(lab) {
+        state.selectedLab = lab;
+        document.getElementById('dashboardPage').style.display = 'none';
+        document.getElementById('labViewPage').style.display = 'block';
+        document.getElementById('viewProfilePage').style.display = 'none';
+        renderLabView();
+    }
+
+    function showDashboard() {
+        document.getElementById('labViewPage').style.display = 'none';
+        document.getElementById('viewProfilePage').style.display = 'none';
+        document.getElementById('dashboardPage').style.display = 'block';
+        state.selectedLab = null;
+        state.selectedSeat = null;
+    }
+
+    // View another user's profile from seat tooltip
+    let _previousSection = 'labView'; // track where we came from
+    function viewUserProfile(userId) {
+        const user = state.users.find(u => u.id === userId);
+        if (!user) return;
+
+        // Remember which section was visible
+        if (document.getElementById('labViewPage').style.display !== 'none') {
+            _previousSection = 'labView';
+        } else {
+            _previousSection = 'dashboard';
+        }
+
+        // Hide other sections, show view profile
+        document.getElementById('dashboardPage').style.display = 'none';
+        document.getElementById('labViewPage').style.display = 'none';
+        document.getElementById('viewProfilePage').style.display = 'block';
+
+        renderViewProfile(user);
+    }
+
+    function goBackFromViewProfile() {
+        document.getElementById('viewProfilePage').style.display = 'none';
+        if (_previousSection === 'labView') {
+            document.getElementById('labViewPage').style.display = 'block';
+        } else {
+            document.getElementById('dashboardPage').style.display = 'block';
+        }
+    }
+
+    // Override renderLabCards to use showLabView
+    const originalRenderLabCards = renderLabCards;
+    renderLabCards = function (labsToRender = state.labs, date = null, time = null) {
+        const grid = document.getElementById('labsGrid');
+        grid.innerHTML = '';
+        
+        if (labsToRender.length === 0) {
+            grid.innerHTML = '<div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--text-muted);">No labs match your filters.</div>';
+            return;
+        }
+
+        labsToRender.forEach(lab => {
+            const available = countAvailableSeats(lab.id, date, time);
+            const card = document.createElement('div');
+            card.className = 'lab-card';
+            card.onclick = () => showLabView(lab);
+
+            card.innerHTML = `
+                <div class="lab-card-header">
+                    <h3>${lab.name}</h3>
+                    <p>${lab.building} - ${lab.floor}</p>
+                </div>
+                <div class="lab-card-body">
+                    <p>${lab.description}</p>
+                    <div class="lab-stats">
+                        <div class="lab-stat">
+                            <div class="lab-stat-value">${lab.seats}</div>
+                            <div class="lab-stat-label">Total Seats</div>
+                        </div>
+                        <div class="lab-stat">
+                            <div class="lab-stat-value">${available}</div>
+                            <div class="lab-stat-label">Available Now</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lab-card-footer">
+                    <button class="btn btn-primary btn-full">View Lab →</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    };
+
+    // Override applyFilters for the new inline lab view structure
+    const originalApplyFilters = applyFilters;
+    applyFilters = function () {
+        // Check if user is searching for a specific lab by checking if there's only 1 matching lab
+        const search = document.getElementById('filterSearch').value.toLowerCase();
+        const date = document.getElementById('filterDate').value;
+        const time = document.getElementById('filterTime').value;
+        const minCapacity = parseInt(document.getElementById('filterCapacity').value) || 0;
+        const availability = document.getElementById('filterAvailability').value;
+    
+        const filteredLabs = state.labs.filter(lab => {
+            const matchesSearch = !search || 
+                lab.name.toLowerCase().includes(search) || 
+                lab.building.toLowerCase().includes(search) ||
+                lab.description.toLowerCase().includes(search);
+            if (!matchesSearch) return false;
+            if (lab.seats < minCapacity) return false;
+    
+            if (availability !== 'all' || (date && time)) {
+                let availableSeats = countAvailableSeats(lab.id, date, time);
+                if (availability === 'available' && availableSeats === 0) return false;
+                if (availability === 'fully_booked' && availableSeats > 0) return false;
+            }
+            return true;
+        });
+        
+        // Render the grid with results
+        renderLabCards(filteredLabs, date, time);
+        updateQuickStats(filteredLabs, date, time);
+
+        if (date) state.selectedDate = date;
+        if (time) state.selectedTime = time;
+
+        showToast(`Found ${filteredLabs.length} matching lab(s).`, 'info');
+    };
+
+    // Override logout for multi-page
+    logout = async function () {
+        try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
+        state.currentUser = null;
+        window.location.href = '/login';
+    };
+
+    function toggleMobileNav() {
+        document.getElementById('navLinks').classList.toggle('show');
+    }
+
+    function toggleUserMenu() {
+        document.getElementById('dropdownMenu').classList.toggle('show');
+    }
+</script>

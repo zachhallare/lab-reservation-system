@@ -1,0 +1,181 @@
+<title>Sign In | Labubu</title>
+<meta name="description" content="Labubu - DLSU Computer Lab Reservation System">
+<style>
+    /* Split Layout Styles */
+    .auth-split-container {
+        display: flex;
+        min-height: 100vh;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .auth-left {
+        flex: 0 0 30%;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8faf9 0%, #e8f0ec 100%);
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+
+    .auth-right {
+        flex: 0 0 70%;
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: 70%;
+        height: 100vh;
+        background-image: url('/images/La_Salle_Background.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    /* Override auth-page styles for split layout */
+    .auth-page {
+        display: block !important;
+        background: none;
+        padding: 0;
+    }
+
+    .auth-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 0;
+    }
+
+    .auth-card {
+        box-shadow: none;
+        background: transparent;
+        border: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .auth-split-container {
+            flex-direction: column;
+        }
+
+        .auth-left {
+            flex: 1;
+            padding: 2rem 1rem;
+        }
+
+        .auth-right {
+            min-height: 250px;
+            flex: 0 0 250px;
+            order: -1;
+        }
+    }
+</style>
+
+<section class="page auth-page" id="loginPage">
+    <div class="auth-split-container">
+        <!-- Left Side - Login Form -->
+        <div class="auth-left">
+            <div class="auth-container">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <div class="auth-logo"><img src="/images/DLSU_Logo.png" alt="DLSU Logo" style="height:3em;">
+                        </div>
+                        <h1>Welcome to Labubu</h1>
+                        <p>DLSU Computer Lab Reservation System</p>
+                    </div>
+                    <form class="auth-form" id="loginForm">
+                        <div class="form-group">
+                            <label for="loginEmail">DLSU Email</label>
+                            <input type="email" id="loginEmail" placeholder="username@dlsu.edu.ph" required>
+                            <span class="form-error" id="loginEmailError"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" id="loginPassword" placeholder="Enter your password"
+                                    required>
+                                <button type="button" class="toggle-password"
+                                    onclick="togglePassword()">Show</button>
+                            </div>
+                        </div>
+                        <div class="form-options">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="rememberMe">
+                                <span class="checkmark"></span>
+                                Remember me
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+                    </form>
+                    <div class="auth-footer">
+                        <p>Don't have an account? <a href="/register">Register here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - DLSU Image (no overlay, no text) -->
+        <div class="auth-right"></div>
+    </div>
+</section>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- JavaScript Modules -->
+<script src="/js/data.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/utils.js"></script>
+<script>
+    // Toggle password visibility
+    function togglePassword() {
+        const input = document.getElementById('loginPassword');
+        const btn = document.querySelector('.toggle-password');
+        input.type = input.type === 'password' ? 'text' : 'password';
+        btn.textContent = input.type === 'password' ? 'Show' : 'Hide';
+    }
+
+    // Handle login form submission
+    async function handleLoginSubmit(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                showToast(data.error || 'Invalid email or password', 'error');
+                return;
+            }
+
+            showToast(`Welcome back, ${data.user.firstName}!`, 'success');
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 500);
+        } catch (err) {
+            showToast('Server error. Please try again.', 'error');
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Check if already logged in via server session
+        try {
+            const res = await fetch('/api/session');
+            const data = await res.json();
+            if (data.loggedIn) {
+                window.location.href = '/dashboard';
+                return;
+            }
+        } catch (e) { /* not logged in */ }
+
+        // Attach form submit handler
+        document.getElementById('loginForm').addEventListener('submit', handleLoginSubmit);
+    });
+</script>

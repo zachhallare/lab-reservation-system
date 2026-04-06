@@ -1,0 +1,180 @@
+<title>Create Account | Labubu</title>
+<meta name="description" content="Labubu - DLSU Computer Lab Reservation System">
+<style>
+    /* Split Layout Styles */
+    .auth-split-container {
+        display: flex;
+        min-height: 100vh;
+        width: 100%;
+    }
+
+    .auth-left {
+        flex: 0 0 30%;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8faf9 0%, #e8f0ec 100%);
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+
+    .auth-right {
+        flex: 0 0 70%;
+        background-image: url('/images/La_Salle_Background.png');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        position: fixed;
+        right: 0;
+        top: 0;
+        width: 70%;
+        height: 100vh;
+    }
+
+    /* Override auth-page styles for split layout */
+    .auth-page {
+        display: block !important;
+        background: none;
+        padding: 0;
+    }
+
+    .auth-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 2rem 0;
+    }
+
+    .auth-card {
+        box-shadow: none;
+        background: transparent;
+        border: none;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+        .auth-split-container {
+            flex-direction: column;
+        }
+
+        .auth-left {
+            flex: 1;
+            padding: 2rem 1rem;
+        }
+
+        .auth-right {
+            min-height: 250px;
+            flex: 0 0 250px;
+            order: -1;
+        }
+    }
+</style>
+
+<section class="page auth-page" id="registerPage">
+    <div class="auth-split-container">
+        <!-- Left Side - Register Form -->
+        <div class="auth-left">
+            <div class="auth-container">
+                <div class="auth-card">
+                    <div class="auth-header">
+                        <div class="auth-logo"><img src="/images/DLSU_Logo.png" alt="DLSU Logo" style="height:3em;">
+                        </div>
+                        <h1>Create Account</h1>
+                        <p>Join the DLSU Lab Reservation System</p>
+                    </div>
+                    <form class="auth-form" id="registerForm">
+                        <div class="form-group">
+                            <label for="regFirstName">First Name</label>
+                            <input type="text" id="regFirstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regLastName">Last Name</label>
+                            <input type="text" id="regLastName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regEmail">DLSU Email</label>
+                            <input type="email" id="regEmail" placeholder="username@dlsu.edu.ph" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="regPassword">Password</label>
+                            <input type="password" id="regPassword" placeholder="Min 8 characters" required
+                                minlength="8">
+                        </div>
+                        <div class="form-group">
+                            <label for="regConfirmPassword">Confirm Password</label>
+                            <input type="password" id="regConfirmPassword" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Create Account</button>
+                    </form>
+                    <div class="auth-footer">
+                        <p>Already have an account? <a href="/login">Sign in here</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side - DLSU Image (no overlay, no text) -->
+        <div class="auth-right"></div>
+    </div>
+</section>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- JavaScript Modules -->
+<script src="/js/data.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/utils.js"></script>
+<script>
+    // Handle registration form submission
+    async function handleRegisterSubmit(e) {
+        e.preventDefault();
+
+        const firstName = document.getElementById('regFirstName').value.trim();
+        const lastName = document.getElementById('regLastName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if (!email.endsWith('@dlsu.edu.ph')) {
+            showToast('Please use a valid DLSU email address', 'error');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showToast('Passwords do not match', 'error');
+            return;
+        }
+
+        if (password.length < 8) {
+            showToast('Password must be at least 8 characters', 'error');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ firstName, lastName, email, password })
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                showToast(data.error || 'Registration failed', 'error');
+                return;
+            }
+
+            showToast('Account created successfully! Redirecting to login...', 'success');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1500);
+        } catch (err) {
+            showToast('Server error. Please try again.', 'error');
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        // Attach form submit handler
+        document.getElementById('registerForm').addEventListener('submit', handleRegisterSubmit);
+    });
+</script>

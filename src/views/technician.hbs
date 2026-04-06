@@ -1,0 +1,309 @@
+<title>Technician Dashboard | Labubu</title>
+<meta name="description" content="Labubu - Lab Technician Dashboard for managing student reservations">
+
+<!-- Navbar -->
+<nav class="navbar" id="navbar">
+    <div class="nav-container">
+        <a href="/dashboard" class="nav-logo">
+            <span class="logo-icon"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                    style="height:1.5em;vertical-align:middle;"></span>
+            <span class="logo-text">Labubu</span>
+        </a>
+        <div class="nav-links" id="navLinks">
+            <a href="/dashboard" class="nav-link" data-page="dashboard">Dashboard</a>
+            <a href="/reservations" class="nav-link" data-page="reservations">My Reservations</a>
+            <a href="/technician" class="nav-link active" data-page="technician" id="navTechnician" style="display: none;">Technician</a>
+        </div>
+        <div class="nav-user" id="navUser">
+            <div class="user-dropdown">
+                <button class="user-btn" onclick="toggleUserMenu()">
+                    <div class="user-avatar" id="navAvatar">U</div>
+                    <span class="user-name" id="navUserName">User</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="/profile"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                            style="height:1em;vertical-align:middle;"> Profile</a>
+                    <a href="#" onclick="logout()"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                            style="height:1em;vertical-align:middle;"> Logout</a>
+                </div>
+            </div>
+        </div>
+        <button class="nav-toggle" onclick="toggleMobileNav()"><img src="/images/DLSU_Logo.png" alt="Menu"
+                style="height:1em;vertical-align:middle;"></button>
+    </div>
+</nav>
+
+<!-- Technician Dashboard Page -->
+<section class="page tech-dashboard-page" id="techDashboardPage" style="display: block;">
+    <div class="page-container">
+        <!-- Page Header -->
+        <div class="dashboard-header">
+            <div class="welcome-section">
+                <h1>Technician Dashboard</h1>
+                <p class="subtitle">Manage all student reservations across computer labs.</p>
+            </div>
+            <div class="quick-stats" id="techStats">
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalReservations">0</span>
+                        <span class="stat-label">Total Reservations</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏫</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalLabs">0</span>
+                        <span class="stat-label">Labs Active</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🚶</div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="totalWalkIns">0</span>
+                        <span class="stat-label">Walk-ins</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar: Filters + Walk-in Button -->
+        <div class="tech-toolbar glass-card">
+            <div class="tech-filters">
+                <div class="filter-group">
+                    <label for="techFilterLab">Laboratory</label>
+                    <select id="techFilterLab" onchange="filterTechReservations()">
+                        <option value="">All Labs</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="techFilterDate">Date</label>
+                    <input type="date" id="techFilterDate" onchange="filterTechReservations()">
+                </div>
+                <div class="filter-group">
+                    <label for="techFilterStudent">Student Name</label>
+                    <input type="text" id="techFilterStudent" placeholder="Search by name..."
+                        oninput="filterTechReservations()">
+                </div>
+            </div>
+            <div class="tech-actions-bar">
+                <button class="btn btn-secondary" onclick="clearTechFilters()">Clear Filters</button>
+                <button class="btn btn-primary" id="walkInBtn" onclick="openWalkInModal()">🚶 Reserve for
+                    Walk-in</button>
+            </div>
+        </div>
+
+        <!-- Reservations Table -->
+        <div class="tech-table-wrapper glass-card">
+            <div class="tech-table-scroll">
+                <table class="tech-table" id="techTable">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Seat #</th>
+                            <th>Laboratory</th>
+                            <th>Requested</th>
+                            <th>Reservation Date/Time</th>
+                            <th>Type</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="techTableBody">
+                        <!-- Dynamically rendered -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="techEmptyState" style="display: none;">
+                <div class="empty-state-icon">📋</div>
+                <h3>No reservations found</h3>
+                <p>Try adjusting your filters or create a walk-in reservation.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer" id="footer">
+    <div class="footer-content">
+        <div class="footer-brand"><span class="logo-icon"><img src="/images/DLSU_Logo.png" alt="DLSU Logo"
+                    style="height:1.5em;vertical-align:middle;"></span><span>Labubu</span></div>
+        <p class="footer-credits">Made By: Ralph Del Rosario | Zach Hallare | Keifer Sy | Farrell Tadina </p>
+        <p class="footer-copyright">© 2026 De La Salle University</p>
+    </div>
+</footer>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="modalOverlay" style="display: none;">
+    <div class="modal glass-card">
+        <h2 id="modalTitle">Confirm</h2>
+        <p id="modalMessage">Are you sure?</p>
+        <div class="modal-actions">
+            <button class="btn btn-primary" id="modalConfirm">Confirm</button>
+            <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Reservation Modal -->
+<div class="modal-overlay" id="editTechModal" style="display: none;">
+    <div class="modal glass-card" style="max-width: 500px;">
+        <h2>✏️ Edit Reservation</h2>
+        <p id="editTechLabName" style="font-weight:600; color: var(--primary);"></p>
+        <form id="editTechForm" method="POST" action="/api/reservations/edit" onsubmit="return false;">
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="editTechStudent">Student</label>
+                <select id="editTechStudent" name="userId" required></select>
+            </div>
+            <div class="form-group">
+                <label for="editTechLab">Laboratory</label>
+                <select id="editTechLab" name="labId" required></select>
+            </div>
+            <div class="form-group">
+                <label for="editTechDate">Date</label>
+                <input type="date" id="editTechDate" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="editTechSeat">Seat Number</label>
+                <input type="number" id="editTechSeat" name="seatNumber" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="editTechTime">Time Slot</label>
+                <select id="editTechTime" name="time" required></select>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="saveEditTechReservation()">Save
+                    Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditTechModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Walk-in Reservation Modal -->
+<div class="modal-overlay" id="walkInModal" style="display: none;">
+    <div class="modal glass-card" style="max-width: 500px;">
+        <h2>🚶 Reserve for Walk-in Student</h2>
+        <form id="walkInForm" method="POST" action="/api/reservations" onsubmit="return false;">
+            <div class="form-group" style="margin-top: 1rem;">
+                <label for="walkInStudent">Student</label>
+                <select id="walkInStudent" name="userId" required></select>
+            </div>
+            <div class="form-group">
+                <label for="walkInLab">Laboratory</label>
+                <select id="walkInLab" name="labId" required></select>
+            </div>
+            <div class="form-group">
+                <label for="walkInDate">Date</label>
+                <input type="date" id="walkInDate" name="date" required>
+            </div>
+            <div class="form-group">
+                <label for="walkInTime">Time Slot</label>
+                <select id="walkInTime" name="time" required></select>
+            </div>
+            <div class="form-group">
+                <label for="walkInSeat">Seat Number</label>
+                <input type="number" id="walkInSeat" name="seatNumber" min="1" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-primary" onclick="saveWalkInReservation()">Create
+                    Reservation</button>
+                <button type="button" class="btn btn-secondary" onclick="closeWalkInModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- JavaScript Modules -->
+<script src="/js/data.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/utils.js"></script>
+<script src="/js/technician.js"></script>
+<script>
+    // Check auth and initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Check if logged in via server session
+        try {
+            const res = await fetch('/api/session');
+            const data = await res.json();
+            if (!data.loggedIn) {
+                window.location.href = '/login';
+                return;
+            }
+            state.currentUser = data.user;
+        } catch (e) {
+            window.location.href = '/login';
+            return;
+        }
+
+        // Only technicians can access this page
+        if (state.currentUser.role !== 'technician') {
+            window.location.href = '/dashboard';
+            return;
+        }
+
+        await initializeData();
+
+        // Update UI
+        updateNavUser();
+        setupEventListeners();
+
+        // Load reservations from API, then render
+        loadTechReservations();
+    });
+
+    function updateNavUser() {
+        if (state.currentUser) {
+            const avatar = document.getElementById('navAvatar');
+            const name = document.getElementById('navUserName');
+            if (state.currentUser.profilePicture) {
+                avatar.innerHTML = `<img src="${state.currentUser.profilePicture}" alt="${state.currentUser.firstName}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            } else {
+                avatar.innerHTML = '';
+                avatar.textContent = state.currentUser.firstName[0].toUpperCase();
+            }
+            name.textContent = state.currentUser.firstName;
+
+            const techLink = document.getElementById('navTechnician');
+            if (techLink) {
+                techLink.style.display = state.currentUser.role === 'technician' ? 'block' : 'none';
+            }
+        }
+    }
+
+    function setupEventListeners() {
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('dropdownMenu');
+            const userBtn = document.querySelector('.user-btn');
+            if (dropdown && !dropdown.contains(e.target) && !userBtn?.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    }
+
+    async function logout() {
+        try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
+        state.currentUser = null;
+        window.location.href = '/login';
+    }
+
+    function toggleMobileNav() {
+        document.getElementById('navLinks').classList.toggle('show');
+    }
+
+    function toggleUserMenu() {
+        document.getElementById('dropdownMenu').classList.toggle('show');
+    }
+
+    // Override navigateTo for multi-page
+    function navigateTo(page) {
+        if (page === 'dashboard') {
+            window.location.href = '/dashboard';
+        } else if (page === 'reservations') {
+            window.location.href = '/reservations';
+        }
+    }
+</script>
