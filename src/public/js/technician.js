@@ -165,10 +165,10 @@ function renderTechReservations(reservations) {
             '<td>' + resDateTime + '</td>' +
             '<td>' + typeBadge + '</td>' +
             '<td class="tech-actions-cell">' +
-                '<button class="btn-icon btn-icon-edit" onclick="editTechReservation(' + r.id + ')" title="Edit Reservation">✏️</button>' +
-                '<button class="btn-icon btn-icon-delete" onclick="removeTechReservation(' + r.id + ')" title="Remove Reservation (No-show)">🗑️</button>' +
+            '<button class="btn-icon btn-icon-edit" onclick="editTechReservation(' + r.id + ')" title="Edit Reservation">✏️</button>' +
+            '<button class="btn-icon btn-icon-delete" onclick="removeTechReservation(' + r.id + ')" title="Remove Reservation (No-show)">🗑️</button>' +
             '</td>' +
-        '</tr>';
+            '</tr>';
     }).join('');
 }
 
@@ -218,6 +218,15 @@ function removeTechReservation(id) {
     const reservation = state.reservations.find(function (r) { return r.id === id; });
     if (!reservation) return;
 
+    const now = new Date();
+    const resDate = new Date(`${reservation.date}T${reservation.time}`);
+    const diffMins = (now - resDate) / (1000 * 60);
+
+    if (!reservation.isBlocked && diffMins < 10) {
+        showToast('Cannot delete reservation until 10 minutes after start time', 'warning');
+        return;
+    }
+
     const user = state.users.find(function (u) { return u.id === reservation.userId; });
     const studentName = user ? user.firstName + ' ' + user.lastName : 'Unknown Student';
 
@@ -226,7 +235,12 @@ function removeTechReservation(id) {
         'Remove reservation for ' + studentName + '? This is typically used when a student does not show up within 10 minutes of their reserved slot.',
         async function () {
             try {
-                await fetch('/api/reservations/' + id, { method: 'DELETE' });
+                const res = await fetch('/api/reservations/' + id, { method: 'DELETE' });
+                if (!res.ok) {
+                    const data = await res.json();
+                    showToast(data.error || 'Error removing reservation', 'error');
+                    return;
+                }
                 state.reservations = state.reservations.filter(function (r) { return r.id !== id; });
 
                 // Update cached list
@@ -251,7 +265,9 @@ function editTechReservation(id) {
     // Populate form
     document.getElementById('editTechStudent').value = reservation.userId;
     document.getElementById('editTechLab').value = reservation.labId;
-    document.getElementById('editTechDate').value = reservation.date;
+    var editTechDate = document.getElementById('editTechDate');
+    editTechDate.min = new Date().toISOString().split('T')[0];
+    editTechDate.value = reservation.date;
     document.getElementById('editTechSeat').value = reservation.seatNumber;
     document.getElementById('editTechTime').value = reservation.time;
 
@@ -431,4 +447,79 @@ async function saveWalkInReservation() {
     var student = state.users.find(function (u) { return u.id === userId; });
     var studentName = student ? student.firstName + ' ' + student.lastName : 'Student';
     showToast('Walk-in reservation created for ' + studentName, 'success');
+}
+
+// ===== PROMOTE STUDENT =====
+function togglePromotePassword() {
+    var input = document.getElementById('promoteTechPassword');
+    var btn = document.getElementById('togglePromotePwdBtn');
+    if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = 'Hide';
+    } else {
+        input.type = 'password';
+        btn.textContent = 'Show';
+    }
+}
+function switchTechTab(tab) {
+    var resView = document.getElementById('techReservationsView');
+    var promoteView = document.getElementById('techPromoteView');
+    var btnRes = document.getElementById('tabManageReservations');
+    var btnPromote = document.getElementById('tabPromoteStudent');
+
+    if (tab === 'reservations') {
+        resView.style.display = 'block';
+        promoteView.style.display = 'none';
+        btnRes.className = 'btn btn-primary';
+        btnRes.style.opacity = '1';
+        btnPromote.className = 'btn btn-secondary';
+        btnPromote.style.opacity = '0.7';
+    } else if (tab === 'promote') {
+        resView.style.display = 'none';
+        promoteView.style.display = 'block';
+        btnRes.className = 'btn btn-secondary';
+        btnRes.style.opacity = '0.7';
+        btnPromote.className = 'btn btn-primary';
+        btnPromote.style.opacity = '1';
+    }
+}
+
+async function promoteStudent(event) {
+    if (event) event.preventDefault();
+
+    var email = document.getElementById('promoteStudentEmail').value.trim();
+    var password = document.getElementById('promoteTechPassword').value;
+
+    if (!email || !password) {
+        showToast('Please fill in both fields', 'error');
+        return;
+    }
+
+    try {
+        var res = await fetch('/api/users/promote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                studentEmail: email,
+                technicianPassword: password
+            })
+        });
+
+        var data = await res.json();
+        if (!res.ok) {
+            showToast(data.error || 'Failed to promote student', 'error');
+            return;
+        }
+
+        showToast('Student successfully promoted to technician!', 'success');
+        document.getElementById('promoteStudentForm').reset();
+
+        // Reload users data to reflect role change in dropdowns if needed
+        const resUsers = await fetch('/api/users');
+        state.users = await resUsers.json();
+        populateFormDropdowns();
+    } catch (err) {
+        console.error(err);
+        showToast('An error occurred during promotion', 'error');
+    }
 }

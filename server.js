@@ -61,7 +61,7 @@ app.use('/api', apiRoutes);
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/labubu';
 mongoose.connect(MONGODB_URI)
     .then(() => {
-        console.log(`Connected to MongoDB: ${MONGODB_URI}`);
+        console.log(`Connected to MongoDB:`);
         // Start server
         app.listen(PORT, () => {
             console.log(`Server is running on http://localhost:${PORT}`);

@@ -160,7 +160,9 @@ function editReservationGroup(ids) {
     }
 
     // Populate edit modal
-    document.getElementById('editResDate').value = r.date;
+    const editResDate = document.getElementById('editResDate');
+    editResDate.min = new Date().toISOString().split('T')[0];
+    editResDate.value = r.date;
     document.getElementById('editResSeat').value = r.seatNumber;
 
     // Populate time checkboxes

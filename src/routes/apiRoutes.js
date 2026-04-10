@@ -74,6 +74,26 @@ router.post('/logout', (req, res) => {
 
 router.post('/register', async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
+    
+    if (!firstName || typeof firstName !== 'string' || firstName.trim() === '') {
+        return res.status(400).json({ error: 'First name is required' });
+    }
+    if (!lastName || typeof lastName !== 'string' || lastName.trim() === '') {
+        return res.status(400).json({ error: 'Last name is required' });
+    }
+    if (!email || typeof email !== 'string' || email.trim() === '') {
+        return res.status(400).json({ error: 'Email is required' });
+    }
+    if (!email.endsWith('@dlsu.edu.ph')) {
+        return res.status(400).json({ error: 'Email must end with @dlsu.edu.ph' });
+    }
+    if (!password || typeof password !== 'string' || password.trim() === '') {
+        return res.status(400).json({ error: 'Password is required' });
+    }
+    if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
+    }
+
     try {
         // Check if email already exists
         const existing = await User.findOne({ email });
@@ -109,6 +129,20 @@ router.post('/register', async (req, res) => {
 router.put('/users/:id', async (req, res) => {
     const userId = parseInt(req.params.id);
     const { firstName, lastName, description, profilePicture, role } = req.body;
+
+    if (firstName !== undefined && (typeof firstName !== 'string' || firstName.trim() === '')) {
+        return res.status(400).json({ error: 'First name cannot be empty' });
+    }
+    if (lastName !== undefined && (typeof lastName !== 'string' || lastName.trim() === '')) {
+        return res.status(400).json({ error: 'Last name cannot be empty' });
+    }
+    if (description !== undefined && (typeof description !== 'string' || description.length > 500)) {
+        return res.status(400).json({ error: 'Description is invalid or too long' });
+    }
+    if (role !== undefined && !['student', 'technician'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role' });
+    }
+
     try {
         const update = {};
         if (firstName !== undefined) update.firstName = firstName;
@@ -137,11 +171,48 @@ router.delete('/users/:id', async (req, res) => {
     }
 });
 
+router.post('/users/promote', async (req, res) => {
+    const { studentEmail, technicianPassword } = req.body;
+    try {
+        if (!req.session || !req.session.userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+        const techUser = await User.findOne({ id: req.session.userId }).lean();
+        if (!techUser || techUser.role !== 'technician') {
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+        
+        const isMatch = await bcrypt.compare(technicianPassword, techUser.password);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+        
+        const student = await User.findOne({ email: studentEmail });
+        if (!student) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+        if (student.role === 'technician') {
+            return res.status(400).json({ error: 'User is already a technician' });
+        }
+        
+        await User.updateOne({ id: student.id }, { $set: { role: 'technician' } });
+        res.json({ success: true, message: 'Student promoted to technician successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error promoting user' });
+    }
+});
+
 // ===== RESERVATION CRUD =====
 router.post('/reservations', async (req, res) => {
     try {
         const reservations = req.body; // array of reservation objects
         const arr = Array.isArray(reservations) ? reservations : [reservations];
+        
+        const today = new Date().toISOString().split('T')[0];
+        if (arr.some(r => r.date < today)) {
+            return res.status(400).json({ error: 'Cannot reserve past dates' });
+        }
+
         await Reservation.insertMany(arr);
         res.json({ success: true });
     } catch (err) {
@@ -152,6 +223,15 @@ router.post('/reservations', async (req, res) => {
 router.put('/reservations/:id', async (req, res) => {
     const resId = parseInt(req.params.id);
     try {
+        const today = new Date().toISOString().split('T')[0];
+        if (req.body.date && req.body.date < today) {
+            return res.status(400).json({ error: 'Cannot reserve past dates' });
+        }
+
+        // Strip out user ids to prevent swapping reservation ownership
+        delete req.body.userId;
+        delete req.body.studentId;
+
         await Reservation.updateOne({ id: resId }, { $set: req.body });
         res.json({ success: true });
     } catch (err) {
@@ -162,6 +242,19 @@ router.put('/reservations/:id', async (req, res) => {
 router.delete('/reservations/:id', async (req, res) => {
     const resId = parseInt(req.params.id);
     try {
+        const reservation = await Reservation.findOne({ id: resId }).lean();
+        if (!reservation) {
+            return res.status(404).json({ error: 'Reservation not found' });
+        }
+
+        const now = new Date();
+        const resDate = new Date(`${reservation.date}T${reservation.time}`);
+        const diffMins = (now - resDate) / (1000 * 60);
+
+        if (!reservation.isBlocked && diffMins < 10) {
+            return res.status(403).json({ error: 'Cannot delete reservation until 10 minutes after start time' });
+        }
+
         await Reservation.deleteOne({ id: resId });
         res.json({ success: true });
     } catch (err) {

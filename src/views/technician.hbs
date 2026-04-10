@@ -12,7 +12,9 @@
         <div class="nav-links" id="navLinks">
             <a href="/dashboard" class="nav-link" data-page="dashboard">Dashboard</a>
             <a href="/reservations" class="nav-link" data-page="reservations">My Reservations</a>
-            <a href="/technician" class="nav-link active" data-page="technician" id="navTechnician" style="display: none;">Technician</a>
+            <a href="/about" class="nav-link" data-page="about">About</a>
+            <a href="/technician" class="nav-link active" data-page="technician" id="navTechnician"
+                style="display: none;">Technician</a>
         </div>
         <div class="nav-user" id="navUser">
             <div class="user-dropdown">
@@ -68,57 +70,89 @@
             </div>
         </div>
 
-        <!-- Toolbar: Filters + Walk-in Button -->
-        <div class="tech-toolbar glass-card">
-            <div class="tech-filters">
-                <div class="filter-group">
-                    <label for="techFilterLab">Laboratory</label>
-                    <select id="techFilterLab" onchange="filterTechReservations()">
-                        <option value="">All Labs</option>
-                    </select>
+        <div class="tech-tabs"
+            style="display:flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">
+            <button class="btn btn-primary" id="tabManageReservations" onclick="switchTechTab('reservations')"
+                style="padding: 0.5rem 1rem;">Manage Reservations</button>
+            <button class="btn btn-secondary" id="tabPromoteStudent" onclick="switchTechTab('promote')"
+                style="padding: 0.5rem 1rem; opacity: 0.7;">Make Technician</button>
+        </div>
+
+        <div id="techReservationsView">
+            <!-- Toolbar: Filters + Walk-in Button -->
+            <div class="tech-toolbar glass-card">
+                <div class="tech-filters">
+                    <div class="filter-group">
+                        <label for="techFilterLab">Laboratory</label>
+                        <select id="techFilterLab" onchange="filterTechReservations()">
+                            <option value="">All Labs</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="techFilterDate">Date</label>
+                        <input type="date" id="techFilterDate" onchange="filterTechReservations()">
+                    </div>
+                    <div class="filter-group">
+                        <label for="techFilterStudent">Student Name</label>
+                        <input type="text" id="techFilterStudent" placeholder="Search by name..."
+                            oninput="filterTechReservations()">
+                    </div>
                 </div>
-                <div class="filter-group">
-                    <label for="techFilterDate">Date</label>
-                    <input type="date" id="techFilterDate" onchange="filterTechReservations()">
-                </div>
-                <div class="filter-group">
-                    <label for="techFilterStudent">Student Name</label>
-                    <input type="text" id="techFilterStudent" placeholder="Search by name..."
-                        oninput="filterTechReservations()">
+                <div class="tech-actions-bar">
+                    <button class="btn btn-secondary" onclick="clearTechFilters()">Clear Filters</button>
+                    <button class="btn btn-primary" id="walkInBtn" onclick="openWalkInModal()">🚶 Reserve for
+                        Walk-in</button>
                 </div>
             </div>
-            <div class="tech-actions-bar">
-                <button class="btn btn-secondary" onclick="clearTechFilters()">Clear Filters</button>
-                <button class="btn btn-primary" id="walkInBtn" onclick="openWalkInModal()">🚶 Reserve for
-                    Walk-in</button>
+
+            <!-- Reservations Table -->
+            <div class="tech-table-wrapper glass-card">
+                <div class="tech-table-scroll">
+                    <table class="tech-table" id="techTable">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Seat #</th>
+                                <th>Laboratory</th>
+                                <th>Requested</th>
+                                <th>Reservation Date/Time</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="techTableBody">
+                            <!-- Dynamically rendered -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="techEmptyState" style="display: none;">
+                    <div class="empty-state-icon">📋</div>
+                    <h3>No reservations found</h3>
+                    <p>Try adjusting your filters or create a walk-in reservation.</p>
+                </div>
             </div>
         </div>
 
-        <!-- Reservations Table -->
-        <div class="tech-table-wrapper glass-card">
-            <div class="tech-table-scroll">
-                <table class="tech-table" id="techTable">
-                    <thead>
-                        <tr>
-                            <th>Student Name</th>
-                            <th>Seat #</th>
-                            <th>Laboratory</th>
-                            <th>Requested</th>
-                            <th>Reservation Date/Time</th>
-                            <th>Type</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="techTableBody">
-                        <!-- Dynamically rendered -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="empty-state" id="techEmptyState" style="display: none;">
-                <div class="empty-state-icon">📋</div>
-                <h3>No reservations found</h3>
-                <p>Try adjusting your filters or create a walk-in reservation.</p>
-            </div>
+        <div id="techPromoteView" class="glass-card" style="display: none; padding: 2rem;">
+            <h2>Make Student a Technician</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Enter the student's email and confirm your
+                password to assign them technician privileges.</p>
+            <form id="promoteStudentForm" onsubmit="promoteStudent(event)" style="max-width: 400px;">
+                <div class="form-group">
+                    <label for="promoteStudentEmail">Student Email</label>
+                    <input type="email" id="promoteStudentEmail" required placeholder="student@dlsu.edu.ph">
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="promoteTechPassword">Your Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="promoteTechPassword" required placeholder="Enter your current password">
+                        <button type="button" class="toggle-password" id="togglePromotePwdBtn" onclick="togglePromotePassword()">Show</button>
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary">Promote Account</button>
+                </div>
+            </form>
         </div>
     </div>
 </section>
@@ -156,7 +190,7 @@
         <form id="editTechForm" method="POST" action="/api/reservations/edit" onsubmit="return false;">
             <div class="form-group" style="margin-top: 1rem;">
                 <label for="editTechStudent">Student</label>
-                <select id="editTechStudent" name="userId" required></select>
+                <select id="editTechStudent" name="userId" required disabled></select>
             </div>
             <div class="form-group">
                 <label for="editTechLab">Laboratory</label>
@@ -285,7 +319,7 @@
     }
 
     async function logout() {
-        try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
+        try { await fetch('/api/logout', { method: 'POST' }); } catch (e) { }
         state.currentUser = null;
         window.location.href = '/login';
     }
